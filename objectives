@@ -1,0 +1,22 @@
+ChemE 546 project
+Generate motifs for metal binding
+Generate something that can score amino acids for which would be best to use in motif
+Lanthanides, other biologically relevant metals
+Software would have to understand the preferred coordination geometries, bond distances, and coordinating atom types for specific ions
+use data from the Cambridge Structural Database to generate arrangements of coordinating atoms around ions of interest.
+The coordinating atoms would be from molecular structures with amino acid analogs, e.g pyridines (for his) and carboxyl groups (asp/glu) → then build inverse rotamers based on the coordinating atom placements
+
+Impact of this project:
+These motifs can be used for designing enzymes, biosensors, proteins to purify lanthanides and other metals, ETC metal coordination
+
+Tasks:
+Getting all data → pipeline that takes data from cambridge data base, RCSB, InterMetalDB and then turn it into something we can use
+There are already existing databases for metal binding so use that instead of cambridge data base (advice from Dave)
+Hard code periodic table → but only use subset for actual coordinating
+Extract features → valency of ions, size, coordinates, position data, polarity scores, electronegativity, bulkiness, charge of residues, pi bonding (aromatic residues)
+ML on features to get scores
+Graph neural network bc using structures
+
+
+Build motifs/active sites
+
