@@ -5,3 +5,6 @@ Jack- Train GNN model
 Long- Aid with training, optimize learning rate and hyperparameters
 Peik- 
 Annika- 
+### environment
+conda env create -f environment.yml
+
