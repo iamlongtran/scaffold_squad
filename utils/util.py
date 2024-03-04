@@ -3,6 +3,19 @@ import sys
 import numpy as np
 import torch
 
+THREE_TO_ONE = {'ALA':'A','CYS':'C','ASP':'D','GLU':'E','PHE':'F',\
+                'GLY':'G','HIS':'H','ILE':'I','LYS':'K','LEU':'L',\
+                'MET':'M','ASN':'N','PRO':'P','GLN':'Q','ARG':'R',\
+                'SER':'S','THR':'T','VAL':'V','TRP':'W','TYR':'Y'}
+
+def return_one_letter_aa(line):
+    return THREE_TO_ONE[line[17:20]]
+
+def three_aa_to_one_aa(aa_name):
+    if aa_name not in THREE_TO_ONE.keys():
+        return 'X'
+    else:
+        return THREE_TO_ONE[aa_name]
 
 num2aa=[
     'ALA','ARG','ASN','ASP','CYS',
@@ -21,7 +34,7 @@ aa123 = {aa1: aa3 for aa1, aa3 in zip(alpha_1, num2aa)}
 aa321 = {aa3: aa1 for aa1, aa3 in zip(alpha_1, num2aa)}
 
 def N_to_AA(x):
-    x = np.array(x);
+    x = np.array(x)
     if x.ndim == 1: x = x[None]
     return ["".join([aa_N_1.get(a,"-") for a in y]) for y in x]
 
@@ -412,3 +425,89 @@ def combine_pdbs(*pdbs, receptor=False):
         pdb_out[k].append((ch, idx))
 
   return pdb_out
+
+
+def get_ligand_num(ref_pdb,ligand_name,multi=False,xyz=False):
+    res_info = [] #resi_num, chain, ligand_name, xyz, 
+    with open(ref_pdb,'r') as fp:
+        for line in fp:
+            if line.startswith('HETATM'):
+                lig_name = ''.join([i for i in line[17:21].strip() if not i.isdigit()])
+                if ligand_name == lig_name : # case where ligand is named 'CU1'
+                    xyz = np.array([float(line[30:38].strip()), float(line[38:46].strip()), float(line[46:54].strip())])
+                    if not multi:
+                        return [line[22:26].strip(),line[21:22].strip(), ligand_name, xyz]
+                    else:
+                        res_info.append([line[22:26].strip(),line[21:22].strip(),ligand_name,xyz])
+            elif line.startswith('ENDMDL'):
+                return res_info
+    return res_info
+
+def return_tmscore(seq1,seq2):
+    from Bio import pairwise2 ### tough one to install
+    alignments = pairwise2.align.globalxx(seq1, seq2)
+    alignment = alignments[0]
+    seq1_aligned = alignment[0]
+    seq2_aligned = alignment[1]
+
+    L = (len(seq1)+len(seq2))/2#len(seq1_aligned)
+    nident = sum([1 for a, b in zip(seq1_aligned, seq2_aligned) if a == b])
+    TMscore = nident / L
+    #print(f'{seq1} {seq2} {TMscore:.2f}')
+    return TMscore
+
+def count_ligand_contacts(pdb, hetatm='', hetatm_num=-1, hetatm_chain='', cutoff=1.5, hotspot=None):
+    ca_xyz = np.zeros(3)
+    cb_xyz = np.zeros(3)
+    bb_xyz = np.zeros(3)
+    hetatm_xyz = np.zeros(3)
+    with open(pdb, 'r') as f:
+        for line in f.readlines():
+            if line.startswith('ATOM'):
+                bb_xyz = np.vstack((bb_xyz,np.array([float(line[30:38].strip()), float(line[38:46].strip()), float(line[46:54].strip())])))
+            elif line.startswith('HETATM'):
+                if (line[17:21].strip() == hetatm) and (line[22:26].strip() == hetatm_num) and (line[21:22].strip()  == hetatm_chain):
+                    hetatm_xyz = np.vstack((hetatm_xyz,np.array([float(line[30:38].strip()), float(line[38:46].strip()), float(line[46:54].strip())])))
+    ca_xyz = ca_xyz[1:]
+    cb_xyz = cb_xyz[1:]
+    hetatm_xyz = hetatm_xyz[1:]
+
+    no_contacts = 0
+    for c_xyz in bb_xyz:
+        if np.linalg.norm(hetatm_xyz-c_xyz) < cutoff:
+            no_contacts += 1
+    return no_contacts
+
+
+def get_ligand_contacts(pdb, hetatm='', hetatm_num=-1, hetatm_chain='', cutoff=1.5, hotspot=None, side_chain=True, count=False):
+    hetatm_xyz = np.zeros(3)
+    with open(pdb, 'r') as f:
+        for line in f.readlines():
+            if line.startswith('HETATM'):
+                lig_name = ''.join([i for i in line[17:21].strip() if not i.isdigit()])
+                if (hetatm ==lig_name) and (line[22:26].strip() == hetatm_num) and (line[21:22].strip()  == hetatm_chain):
+                    #hetatm_xyz = np.vstack((hetatm_xyz,np.array([float(line[30:38].strip()), float(line[38:46].strip()), float(line[46:54].strip())])))
+                    hetatm_xyz = np.array([float(line[30:38].strip()), float(line[38:46].strip()), float(line[46:54].strip())])
+
+    if hotspot is None:
+        with open(pdb,'r') as f:
+            resi_id = [] #resi_num, chain, identity
+            for line in f.readlines():
+                if line.startswith('ATOM'):
+                    bb_xyz = np.array([float(line[30:38].strip()), float(line[38:46].strip()), float(line[46:54].strip())])
+                    if np.linalg.norm(hetatm_xyz-bb_xyz) <= cutoff:
+                        if [line[22:26].strip(), line[21:22].strip(),line[17:21].strip()] not in resi_id:
+                            resi_id.append([line[22:26].strip(), line[21:22].strip(),line[17:21].strip()])
+        return resi_id
+
+    elif hotspot is not None:
+        with open(pdb,'r') as f:
+            resi_id = [] #id, chain, resi identiy
+            for line in f.readlines():
+                if line.startswith('ATOM'):
+                    if line[17:21].strip() in hotspot:
+                        bb_xyz = np.array([float(line[30:38].strip()), float(line[38:46].strip()), float(line[46:54].strip())])
+                        if np.linalg.norm(hetatm_xyz-bb_xyz) <= cutoff:
+                            if [line[22:26].strip(), line[21:22].strip(),line[17:21].strip()] not in resi_id:
+                                resi_id.append([line[22:26].strip(), line[21:22].strip(),line[17:21].strip()])
+    return resi_id
