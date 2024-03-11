@@ -8,6 +8,7 @@ script_dir = os.path.dirname(os.path.realpath(__file__))
 sys.path.append(script_dir)
 import util
 #from . import util
+import ipdb
 
 
 num2aa=[
@@ -139,28 +140,30 @@ def parse_pdb(filename, **kwargs):
     lines = open(filename,'r').readlines()
     return parse_pdb_lines(lines, **kwargs)
 
-def parse_pdb_lines(lines, parse_hetatom=False, ignore_het_h=True):
+def parse_pdb_lines(lines, parse_hetatom=True, ignore_het_h=True):
     # indices of residues observed in the structure
     res = [(l[22:26],l[17:20]) for l in lines if l[:4]=="ATOM" and l[12:16].strip()=="CA"]
     seq = [util.aa2num[r[1]] if r[1] in util.aa2num.keys() else 20 for r in res]
     pdb_idx = [( l[21:22].strip(), int(l[22:26].strip()) ) for l in lines if l[:4]=="ATOM" and l[12:16].strip()=="CA"]  # chain letter, res num
-
-
-    # 4 BB + up to 10 SC atoms
-    xyz = np.full((len(res), 14, 3), np.nan, dtype=np.float32)
+    #atom_type = [l[76:78].strip() for l in lines if l[:4]=="ATOM" and l[12:16].strip()!="CA"]
+    # 4 BB + up to 20 SC atoms - should be more than enough
+    xyz = np.full((len(res), 24, 3), np.nan, dtype=np.float32)
+    atom_type = np.full((len(res), 24), 'X', dtype=str) #to get rid of hetatm resi
     for l in lines:
         if l[:4] != "ATOM":
             continue
         chain, resNo, atom, aa = l[21:22], int(l[22:26]), ' '+l[12:16].strip().ljust(3), l[17:20]
         idx = pdb_idx.index((chain,resNo))
         for i_atm, tgtatm in enumerate(util.aa2long[util.aa2num[aa]]):
+            #ipdb.set_trace()
             if tgtatm is not None and tgtatm.strip() == atom.strip(): # ignore whitespace
                 xyz[idx,i_atm,:] = [float(l[30:38]), float(l[38:46]), float(l[46:54])]
+                atom_type[idx,i_atm] = l[76:78].strip()
                 break
 
     # save atom mask
     mask = np.logical_not(np.isnan(xyz[...,0]))
-    xyz[np.isnan(xyz[...,0])] = 0.0
+    #xyz[np.isnan(xyz[...,0])] = 0.0 - no need for now
 
     # remove duplicated (chain, resi)
     new_idx = []
@@ -172,14 +175,16 @@ def parse_pdb_lines(lines, parse_hetatom=False, ignore_het_h=True):
             
     pdb_idx = new_idx
     xyz = xyz[i_unique]
+    atom_type = atom_type[i_unique]
     mask = mask[i_unique]
     seq = np.array(seq)[i_unique]
 
-    out = {'xyz':xyz, # cartesian coordinates, [Lx14]
+    out = {'xyz':xyz, # cartesian coordinates, [Lx24]
             'mask':mask, # mask showing which atoms are present in the PDB file, [Lx14]
             'idx':np.array([i[1] for i in pdb_idx]), # residue numbers in the PDB file, [L]
             'seq':np.array(seq), # amino acid sequence, [L]
             'pdb_idx': pdb_idx,  # list of (chain letter, residue number) in the pdb file, [L]
+            'atom_type': atom_type, #atom type correspond to each xyz, [Lx24]
            }
 
     # heteroatoms (ligands, etc)
@@ -189,9 +194,9 @@ def parse_pdb_lines(lines, parse_hetatom=False, ignore_het_h=True):
             if l[:6]=='HETATM' and not (ignore_het_h and l[77]=='H'):
                 info_het.append(dict(
                     idx=int(l[7:11]),
-                    atom_id=l[12:16],
-                    atom_type=l[77],
-                    name=l[16:20]
+                    atom_id=l[12:16].strip(),
+                    atom_type=l[76:78].strip(),
+                    name=l[16:20].strip()
                 ))
                 xyz_het.append([float(l[30:38]), float(l[38:46]), float(l[46:54])])
 
@@ -367,3 +372,14 @@ def parse_fasta(filename):
             out[name] = seq
 
     return out
+
+# def parse_pdb_as_it(pdb):
+#     with open(pdb, 'r') as f:
+#         xyz = []
+#         seq = []
+#         atom_type = []
+#         bb_atom_type = []
+#         cont = False
+#         for line in f.readlines():
+            
+#     return None

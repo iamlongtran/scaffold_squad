@@ -511,3 +511,10 @@ def get_ligand_contacts(pdb, hetatm='', hetatm_num=-1, hetatm_chain='', cutoff=1
                             if [line[22:26].strip(), line[21:22].strip(),line[17:21].strip()] not in resi_id:
                                 resi_id.append([line[22:26].strip(), line[21:22].strip(),line[17:21].strip()])
     return resi_id
+
+def get_ligand(pdb):
+    with open(pdb, 'r') as f:
+        for line in f.readlines():
+            if line.startswith('HETATM'):
+                return line[17:21].strip()
+    return None
