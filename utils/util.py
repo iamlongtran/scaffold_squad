@@ -8,6 +8,10 @@ THREE_TO_ONE = {'ALA':'A','CYS':'C','ASP':'D','GLU':'E','PHE':'F',\
                 'MET':'M','ASN':'N','PRO':'P','GLN':'Q','ARG':'R',\
                 'SER':'S','THR':'T','VAL':'V','TRP':'W','TYR':'Y'}
 
+ONE_TO_THREE = {}
+for key, value in THREE_TO_ONE.items():
+    ONE_TO_THREE[value] = key
+
 def return_one_letter_aa(line):
     return THREE_TO_ONE[line[17:20]]
 
@@ -25,6 +29,15 @@ num2aa=[
     ]
 
 aa2num= {x:i for i,x in enumerate(num2aa)}
+
+def one_hot_aa(aa):
+    '''
+    parsing THREE letter aa to convert to Lx20 vector
+    '''
+    v = np.zeros(20)
+    aa_num = aa2num[aa]
+    v[aa_num] = 1
+    return v
 
 alpha_1 = list("ARNDCQEGHILKMFPSTWYV-")
 aa_N_1 = {n:a for n,a in enumerate(alpha_1)}

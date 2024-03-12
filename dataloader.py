@@ -92,3 +92,6 @@ def extract_metal_motif(pdb_id, metal_info, motif, dataset_dir='./datasets/rcsb_
 
     with open(f'{motif_dir}{pdb_id}_{metal_binding_id}.pdb', 'w') as f1:
         f1.writelines(w_lines)
+
+def extract_feats():
+    return None

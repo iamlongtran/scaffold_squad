@@ -8,8 +8,6 @@ script_dir = os.path.dirname(os.path.realpath(__file__))
 sys.path.append(script_dir)
 import util
 #from . import util
-import ipdb
-
 
 num2aa=[
     'ALA','ARG','ASN','ASP','CYS',
@@ -155,7 +153,6 @@ def parse_pdb_lines(lines, parse_hetatom=True, ignore_het_h=True):
         chain, resNo, atom, aa = l[21:22], int(l[22:26]), ' '+l[12:16].strip().ljust(3), l[17:20]
         idx = pdb_idx.index((chain,resNo))
         for i_atm, tgtatm in enumerate(util.aa2long[util.aa2num[aa]]):
-            #ipdb.set_trace()
             if tgtatm is not None and tgtatm.strip() == atom.strip(): # ignore whitespace
                 xyz[idx,i_atm,:] = [float(l[30:38]), float(l[38:46]), float(l[46:54])]
                 atom_type[idx,i_atm] = l[76:78].strip()
