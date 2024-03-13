@@ -12,7 +12,7 @@ def pdb_hetatmlines(file): #check to see if pdb has hetatm lines
 	else:
 		pass
 	if l > 1:
-	raise ValueError("File cannot have more than one ligand")
+	    raise ValueError("File cannot have more than one ligand")
 	else:
 		pass
 
