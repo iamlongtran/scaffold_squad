@@ -1,7 +1,14 @@
-import sys
-
+import os,sys
 import numpy as np
 import torch
+import pandas as pd
+#from parsers import parse_pdb
+parent_dir = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
+sys.path.append(parent_dir)
+# sys.path.append(os.path.join(script_dir, '../'))
+# sys.path.append(os.path.join(script_dir, '../data/'))
+from utils import parsers
+#import ipdb
 
 THREE_TO_ONE = {'ALA':'A','CYS':'C','ASP':'D','GLU':'E','PHE':'F',\
                 'GLY':'G','HIS':'H','ILE':'I','LYS':'K','LEU':'L',\
@@ -531,3 +538,149 @@ def get_ligand(pdb):
             if line.startswith('HETATM'):
                 return line[17:21].strip()
     return None
+
+def get_motif(pdb,metal='UNK',metal_id=-1,cutoff=3.0):
+    ### metal id is Atom serial number
+    #ipdb.set_trace()
+    out = parsers.parse_pdb(pdb, parse_hetatom=True)
+    out = parsers.parse_pdb(pdb)
+    periodic_table = pd.read_csv(f'{parent_dir}/data/periodic_table_1.csv') #data/periodic_table.csv
+    chains = []
+    for idx in out['pdb_idx']:
+        chains.append(idx[0])
+    chains = list(set(chains))
+    # bound_seq = out['seq']
+    # bound_residue = []
+    # for s in bound_seq:
+    #     bound_residue.append(THREE_TO_ONE[num2aa[s]])
+    #ipdb.set_trace()
+    for i,info in enumerate(out['info_het']):
+        if (int(info['idx']) == int(metal_id) or -1 == int(metal_id)) and info['name'].strip().upper() == metal.strip().upper():
+            break
+
+    metal_xyz = out['xyz_het'][i] #np array 1x3/3x1
+    NN_atoms = {'atom_type':[],'NN_atoms':[], 'l2d':[], 'van_der_waals_radius':[], 'electronegativity':[], 'unshared_electron':[], 'valency':[]}
+    num_nn_atoms = 0
+    for i, resi_xyz in enumerate(out['xyz']):
+        for j, bb_xyz in enumerate(resi_xyz):
+            if any(np.isnan(bb_xyz)):
+                continue
+            if np.linalg.norm(bb_xyz-metal_xyz) <= 3.0: # A, consensus cutoff
+                #ipdb.set_trace()
+                atom_type = out['atom_type'][i][j]
+                atom_property = periodic_table[periodic_table['Symbol'] == atom_type]
+                NN_atoms['atom_type'].append(atom_type)
+                NN_atoms['l2d'].append(np.linalg.norm(bb_xyz))
+                NN_atoms['van_der_waals_radius'].append(atom_property['AtomicRadius'].values[0])
+                NN_atoms['electronegativity'].append(atom_property['Electronegativity'].values[0])
+                NN_atoms['valency'].append(atom_property['NumberOfValence'].values[0])
+                NN_atoms['unshared_electron'].append(atom_property['NumberOfValence'].values[0] - (8 - atom_property['NumberOfValence'].values[0]))
+                num_nn_atoms += 1
+    NN_atoms['NN_atoms'] = num_nn_atoms
+    NN_atoms = pd.DataFrame(NN_atoms) #TODO validate
+    #ipdb.set_trace()
+    return NN_atoms
+
+def flatten_motif_data(df_metal):
+    df_properties = {'NN_atoms':[], 'l2d':[], 'van_der_waals_radius':[], 'electronegativity':[], 'unshared_electron':[], 'valency':[]}
+    NN_atoms = np.zeros(8)
+    l2d = np.zeros(8)
+    van_der_waals_radius = np.zeros(8)
+    electronegativity = np.zeros(8)
+    unshared_electron = np.zeros(8)
+    valency = np.zeros(8)
+    for i in range(len(df_metal)):
+        #for j in range(df_metal['num_NN_atom'].values[i]):
+        #NN_atoms_val = len(df_metal['NN_atoms'].values[i])#['atom_type'])
+        #NN_atoms_val = i
+        #NN_atoms[:i] = 1
+        #ipdb.set_trace()
+        l2d_val = df_metal['l2d'][i]
+        van_der_waals_radius_val = df_metal['van_der_waals_radius'][i]
+        electronegativity_val = df_metal['electronegativity'][i]
+        unshared_electron_val = df_metal['unshared_electron'][i]
+        valency_val = df_metal['valency'][i]
+    #for k in range(i):
+        NN_atoms[i] = 1
+        l2d[i] = l2d_val
+        van_der_waals_radius[i] = van_der_waals_radius_val
+        electronegativity[i] = electronegativity_val
+        unshared_electron[i] = unshared_electron_val
+        valency[i] = valency_val
+    df_properties['NN_atoms'].append(NN_atoms)
+    df_properties['l2d'].append(l2d)
+    df_properties['van_der_waals_radius'].append(van_der_waals_radius)
+    df_properties['electronegativity'].append(electronegativity)
+    df_properties['unshared_electron'].append(unshared_electron)
+    df_properties['valency'].append(valency)
+    df_properties = pd.DataFrame(df_properties)
+    return df_properties
+
+def get_X_data(df_properties):
+    '''
+    input: NN_atoms
+    output: X_data for inference, size has to match to the training data size
+    '''
+    ### get 8 closest atoms to the metal
+    X_data = df_properties[['NN_atoms', 'l2d', 'van_der_waals_radius', 'electronegativity', 'unshared_electron', 'valency']]
+    X_data_NN_atoms = X_data['NN_atoms'].values
+    # #X_data_NN_atoms = np.concatenate(X_data_NN_atoms, axis=0)
+    # X_data_NN_atoms= np.reshape(X_data_NN_atoms, (len(X_data['NN_atoms']), 8))
+    # X_data_NN_atoms_corrupt = X_data_NN_atoms.copy()
+    # X_data_NN_atoms_corrupt = X_data_NN_atoms_corrupt - np.mean(X_data_NN_atoms,axis=0)*3*np.std(X_data_NN_atoms,axis=0)
+    # X_data_NN_atoms_corrupt = X_data_NN_atoms_corrupt.astype(int)
+    # X_data_NN_atoms_corrupt[X_data_NN_atoms_corrupt < 0] = 0
+
+    X_data_l2d = X_data['l2d'].values
+    #X_data_l2d = np.concatenate(X_data_l2d, axis=0)
+    # X_data_l2d= np.reshape(X_data_l2d, (len(X_data['l2d']), 8))
+    # X_data_l2d_corrupt = X_data_l2d.copy()
+    # X_data_l2d_corrupt = X_data_l2d_corrupt + np.mean(X_data_l2d,axis=0)*2*np.std(X_data_l2d,axis=0)
+
+    X_data_van_der_waals_radius = X_data['van_der_waals_radius'].values
+    # X_data_van_der_waals_radius = np.concatenate(X_data_van_der_waals_radius, axis=0)
+    # X_data_van_der_waals_radius= np.reshape(X_data_van_der_waals_radius, (len(X_data['van_der_waals_radius']), 8))
+    # X_data_van_der_waals_radius_corrupt = X_data_van_der_waals_radius.copy()
+    # X_data_van_der_waals_radius_corrupt = X_data_van_der_waals_radius_corrupt + np.std(X_data_van_der_waals_radius,axis=0)*2*(-1)*np.random.randint(-1,1)
+
+    X_data_electronegativity = X_data['electronegativity'].values
+    # X_data_electronegativity = np.concatenate(X_data_electronegativity, axis=0)
+    # X_data_electronegativity= np.reshape(X_data_electronegativity, (len(X_data['electronegativity']), 8))
+    # X_data_electronegativity_corrupt = X_data_electronegativity.copy()
+    # X_data_electronegativity_corrupt = X_data_electronegativity_corrupt + np.std(X_data_electronegativity,axis=0)*2*(-1)**np.random.randint(-1,1)
+
+    X_data_unshared_electron = X_data['unshared_electron'].values
+    # X_data_unshared_electron = np.concatenate(X_data_unshared_electron, axis=0)
+    # X_data_unshared_electron= np.reshape(X_data_unshared_electron, (len(X_data['unshared_electron']), 8))
+    # X_data_unshared_electron_corrupt = X_data_unshared_electron.copy()
+    # X_data_unshared_electron_corrupt = X_data_unshared_electron_corrupt + np.std(X_data_unshared_electron,axis=0)*2*(-1)**np.random.randint(-1,1)
+
+    X_data_valency = X_data['valency'].values
+    # X_data_valency = np.concatenate(X_data_valency, axis=0)
+    # X_data_valency= np.reshape(X_data_valency, (len(X_data['valency']), 8))
+    # X_data_valency_corrupt = X_data_valency.copy()
+    # X_data_valency_corrupt = X_data_valency_corrupt + np.std(X_data_valency,axis=0)*2*(-1)**np.random.randint(-1,1)
+
+    X_data = np.concatenate((X_data_NN_atoms[0], X_data_l2d[0], X_data_van_der_waals_radius[0], X_data_electronegativity[0], X_data_unshared_electron[0], X_data_valency[0]))
+    # y_data = np.ones(np.shape(X_data)[0]) # one class positive data
+    # X_data_corrupt = np.concatenate((X_data_NN_atoms_corrupt, X_data_l2d_corrupt, X_data_van_der_waals_radius_corrupt, X_data_electronegativity_corrupt, X_data_unshared_electron_corrupt, X_data_valency_corrupt), axis=1)
+    # y_data_corrupt = -1*np.ones(np.shape(X_data_corrupt)[0]) # one class pseudo-negative data
+    # #randomly take two-third of corrupt data, dont want to overwhelm the model with too much pseudo-negative data
+    # X_data_corrupt = X_data_corrupt[np.random.choice(X_data_corrupt.shape[0], int(X_data_corrupt.shape[0]*2/3), replace=False), :]
+    # y_data_corrupt = -1*np.ones(np.shape(X_data_corrupt)[0]) # one class pseudo-negative data
+
+    # X_data = np.concatenate((X_data, X_data_corrupt), axis=0)
+    # y_data = np.concatenate((y_data, y_data_corrupt), axis=0)
+    return X_data
+
+def preprocess_tip_atom(pdb, metal='UNK', metal_id=-1,cutoff=3.0):
+    '''
+    preprocess full side chain pdb, ideally relaxed, with metal binding site
+    extract relevant motif
+    to be used for binding likelihood prediction
+    metal_id is Atom serial number
+    '''
+    motif_info = get_motif(pdb,metal=metal,metal_id=metal_id,cutoff=cutoff)
+    motif_info = flatten_motif_data(motif_info) #flatten motif data to match training data shape
+    X_data =  get_X_data(motif_info)
+    return X_data
