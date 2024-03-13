@@ -4,7 +4,7 @@ Division of labor of tasks:
 Jack- Train GNN model
 Long- Aid with training, optimize learning rate and hyperparameters
 Peik - Extract and normalize data for training and input
-Annika- 
+Annika- organization
 ### environment
 conda env create -f environment.yml
 
