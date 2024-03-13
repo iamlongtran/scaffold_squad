@@ -8,3 +8,8 @@ Annika-
 ### environment
 conda env create -f environment.yml
 
+### dataset curation
+initial pdb was curateed from https://intermetaldb.biotech.uni.wroc.pl/search_metal_site/
+pdb was download from rcsb.com
+extract motif on curated pdbs
+e
