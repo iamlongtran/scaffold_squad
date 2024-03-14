@@ -41,14 +41,17 @@ def main(args):
 			model = joblib.load(f'{parent_dir}/weight3/')
 		if atom_type == 'ZN':
 			model = joblib.load(f'{parent_dir}/weight3/')
+	else:
+		model = joblib.load(model)
 
 	pdb_data = util.preprocess_tip_atom(pdb, metal=atom_type)
 	pdb_data = np.reshape(pdb_data, (1,-1))
+	pred = model.predict(pdb_data)
 	X = ['no result\n']
-	if int(pdb_data[0]) == 1:
+	if int(pred[0]) == 1:
 		print(f'Scaffold predicted to bind {atom_type}!')
 		X = [f'prediction for {atom_type} binding of scaffold {name}: 1']
-	if int(pdb_data[0] == -1):
+	if int(pred[0]) == -1:
 		print(f'Scaffold predicted NOT TO bind {atom_type}!')
 		X = [f'prediction for {atom_type} binding of scaffold {name}:-1']
 	f = open(f'{name}_{atom_type}_prediction.txt', 'w')
