@@ -11,6 +11,10 @@ from tqdm import tqdm
 import joblib
 from utils import unit_tests
 
+
+parent_dir = '/'.join(__file__.split('/')[:-1])
+
+
 parser = ArgumentParser()
 
 parser.add_arg('--pdb', help='pdb file with metal motif for prediction')
@@ -34,13 +38,15 @@ def main(args):
 
 	if model == None:
 		if atom_type == 'CA':
-			model = joblib.load(f'{parent_dir}/weight3/one_class_svm_CA_nu_0.1_roc_0.72.pkl')
+			model = joblib.load(f'{parent_dir}/weight4/svm_svc_CA_roc_0.81.pkl')
 		if atom_type == 'NA':
-			model = joblib.load(f'{parent_dir}/weight3/')
+			model = joblib.load(f'{parent_dir}/weight4/svm_svc_NA_roc_0.871.pkl')
 		if atom_type == 'K':
-			model = joblib.load(f'{parent_dir}/weight3/')
+			model = joblib.load(f'{parent_dir}/weight4/svm_svc_K_roc_0.929.pkl')
 		if atom_type == 'ZN':
-			model = joblib.load(f'{parent_dir}/weight3/')
+			model = joblib.load(f'{parent_dir}/weight4/svm_svc_ZN_roc_0.873.pkl')
+		if atom_type == 'MG':
+			model = joblib.load(f'{parent_dir}/weight4/svm_svc_MG_roc_0.962.pkl')
 	else:
 		model = joblib.load(model)
 

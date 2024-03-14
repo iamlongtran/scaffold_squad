@@ -11,6 +11,9 @@ from tqdm import tqdm
 import joblib
 from utils import unit_tests
 
+parent_dir = '/'.join(__file__.split('/')[:-1])
+
+
 parser = ArgumentParser()
 
 parser.add_arg('--csv', help='csv file with pdbs for prediction, accompanying metal atom index numbers, and atom type. Columns should be labeled "pdb", "metal_idx", and "metal"')
