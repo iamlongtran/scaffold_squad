@@ -1,10 +1,7 @@
 repo for cheme 546 project
-scaffold generation for ion binding sites
-Division of labor of tasks:
-Jack- Train GNN model
-Long- Aid with training, optimize learning rate and hyperparameters
-Peik - Extract and normalize data for training and input
-Annika- 
+
+Metal Binding Prediction for Protein Scaffolds
+
 ### environment
 conda env create -f environment.yml
 
@@ -19,6 +16,20 @@ demo jupyternote book is in demo/
 load model: model loaded from weight4/(model_metal).pkl
 example_data = preprocess pdb by utl.preprocess_tip_atom(example.pdb)
 model.predict(example_data)
+
+
+###EXAMPLE USAGE:
+#for predicting a single Zn binding site
+python run_scaffold_pred.py --pdb PATH_TO_PDB --metal_id ATOM_ID_NUM --metal_type ZN
+outputs: a txt file PDB_ZN.txt with prediction
+
+#for predicting binding ability of multiple scaffolds - make csv of pdb paths, pdb atom index number of metal, and metal type
+#csv columns must be labeled "pdb", "metal_idx", and "metal"
+python run_scaffold_pred_batch.py --csv PATH_TO_CSV --output OUTPUT_CSV_PATH
+outputs: csv file with pdb ids and binding prediction
+
+
+
 
 ### references
 util function is built on https://github.com/RosettaCommons/RFdiffusion
