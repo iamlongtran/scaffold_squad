@@ -1,6 +1,4 @@
-repo for cheme 546 project
-
-Metal Binding Prediction for Protein Scaffolds
+# Metal Binding Prediction for Protein Scaffolds
 
 ### environment
 conda env create -f environment.yml
