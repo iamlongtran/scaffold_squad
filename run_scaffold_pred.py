@@ -18,8 +18,8 @@ parent_dir = '/'.join(__file__.split('/')[:-1])
 parser = argparse.ArgumentParser()
 
 parser.add_argument('--pdb', help='pdb file with metal motif for prediction')
-parser.add_argument('--metal_id', help='atom index number of metal in pdb file')
-parser.add_argument('--metal_type', help='type of metal for binding prediction (e.g ZN)')
+parser.add_argument('--metal_pdb_id', help='atom index number of metal in pdb file')
+parser.add_argument('--metal', help='type of metal for binding prediction (e.g ZN)')
 parser.add_argument('--model_wt', help='path to model weight', default=None)
 
 args = parser.parse_args()
@@ -28,7 +28,7 @@ def main(args):
 	
 	pdb = args.pdb
 	idx = args.metal_id
-	atom_type = args.metal_type
+	atom_type = args.metal
 	model = args.model_wt
 
 	unit_tests.check_inputs(pdb, idx, atom_type) #verify pdb is in correct format

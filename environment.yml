@@ -1,4 +1,4 @@
-name: cheme_546
+name: scaffpred
 channels:
   - conda-forge
   - pytorch
