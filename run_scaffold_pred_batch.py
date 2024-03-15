@@ -16,13 +16,13 @@ parent_dir = '/'.join(__file__.split('/')[:-1])
 
 parser = argparse.ArgumentParser()
 
-parser.add_arg('--csv', help='csv file with pdbs for prediction, accompanying metal atom index numbers, and atom type. Columns should be labeled "pdb", "metal_idx", and "metal"')
-parser.add_arg('--model_ZN', help='path to model weight for ZN', default=None)
-parser.add_arg('--model_CA', help='path to model weight for CA', default=None)
-parser.add_arg('--model_NA', help='path to model weight for NA', default=None)
-parser.add_arg('--model_K', help='path to model weight for K', default=None)
-parser.add_arg('--model_MG', help='path to model weight for MG', default=None)
-parser.add_arg('--output', help='name of results csv file to output')
+parser.add_argument('--csv', help='csv file with pdbs for prediction, accompanying metal atom index numbers, and atom type. Columns should be labeled "pdb", "metal_idx", and "metal"')
+parser.add_argument('--model_ZN', help='path to model weight for ZN', default=None)
+parser.add_argument('--model_CA', help='path to model weight for CA', default=None)
+parser.add_argument('--model_NA', help='path to model weight for NA', default=None)
+parser.add_argument('--model_K', help='path to model weight for K', default=None)
+parser.add_argument('--model_MG', help='path to model weight for MG', default=None)
+parser.add_argument('--output', help='name of results csv file to output')
 
 args = parser.parse_args()
 
