@@ -1,4 +1,4 @@
-import argparser
+import argparse
 import os,sys,glob
 import numpy as np
 import pandas as pd
@@ -14,10 +14,9 @@ from utils import unit_tests
 parent_dir = '/'.join(__file__.split('/')[:-1])
 
 
-parser = ArgumentParser()
+parser = argparse.ArgumentParser()
 
 parser.add_arg('--csv', help='csv file with pdbs for prediction, accompanying metal atom index numbers, and atom type. Columns should be labeled "pdb", "metal_idx", and "metal"')
-parser.add_arg('--metal_type', help='type of metal for binding prediction (e.g ZN)')
 parser.add_arg('--model_ZN', help='path to model weight for ZN', default=None)
 parser.add_arg('--model_CA', help='path to model weight for CA', default=None)
 parser.add_arg('--model_NA', help='path to model weight for NA', default=None)
@@ -30,7 +29,6 @@ args = parser.parse_args()
 def main(args):
 	
 	csv = args.csv
-	atom_type = args.metal_type
 	model_ZN = args.model_ZN
 	model_CA = args.model_CA
 	model_NA = args.model_NA

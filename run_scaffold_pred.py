@@ -1,4 +1,4 @@
-import argparser
+import argparse
 import os,sys,glob
 import numpy as np
 import pandas as pd
@@ -15,12 +15,12 @@ from utils import unit_tests
 parent_dir = '/'.join(__file__.split('/')[:-1])
 
 
-parser = ArgumentParser()
+parser = argparse.ArgumentParser()
 
-parser.add_arg('--pdb', help='pdb file with metal motif for prediction')
-parser.add_arg('--metal_id', help='atom index number of metal in pdb file')
-parser.add_arg('--metal_type', help='type of metal for binding prediction (e.g ZN)')
-parser.add_arg('--model_wt', help='path to model weight', default=None)
+parser.add_argument('--pdb', help='pdb file with metal motif for prediction')
+parser.add_argument('--metal_id', help='atom index number of metal in pdb file')
+parser.add_argument('--metal_type', help='type of metal for binding prediction (e.g ZN)')
+parser.add_argument('--model_wt', help='path to model weight', default=None)
 
 args = parser.parse_args()
 
@@ -29,7 +29,7 @@ def main(args):
 	pdb = args.pdb
 	idx = args.metal_id
 	atom_type = args.metal_type
-	model = args.model
+	model = args.model_wt
 
 	unit_tests.check_inputs(pdb, idx, atom_type) #verify pdb is in correct format
 
