@@ -10,8 +10,9 @@ initial pdbs were curated from the MetalPDB Database
 https://intermetaldb.biotech.uni.wroc.pl/search_metal_site/
 
 pdbs were downloaded from rcsb.com
+curated pdbs are stored in https://drive.google.com/drive/folders/1ZXgxjl56geIa0vIaNQC21tMP3Rnj6vnv?usp=sharing%
 
-
+extracted relevant data is stored in `data/df_rotamer.pkl` 
 ### demo
 demo jupyternote book is in demo/
 
